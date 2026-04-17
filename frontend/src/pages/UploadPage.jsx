@@ -12,6 +12,19 @@ const initialState = {
   file: null
 };
 
+const tagOptions = [
+  { value: 'landscape', label: 'Landscape' },
+  { value: 'cyberpunk', label: 'Cyberpunk' },
+  { value: 'portrait', label: 'Portrait' },
+  { value: 'fantasy', label: 'Fantasy' },
+  { value: 'abstract', label: 'Abstract' },
+  { value: 'anime', label: 'Anime' },
+  { value: 'sci-fi', label: 'Sci-Fi' },
+  { value: 'architecture', label: 'Architecture' },
+  { value: 'nature', label: 'Nature' },
+  { value: 'surreal', label: 'Surreal' }
+];
+
 export function UploadPage() {
   const { user } = useAuth();
   const [images, setImages] = useState([]);
@@ -146,10 +159,11 @@ export function UploadPage() {
                     value={form.tag}
                     onChange={(event) => setForm((current) => ({ ...current, tag: event.target.value }))}
                   >
-                    <option value="landscape">Landscape</option>
-                    <option value="cyberpunk">Cyberpunk</option>
-                    <option value="portrait">Portrait</option>
-                    <option value="fantasy">Fantasy</option>
+                    {tagOptions.map((tag) => (
+                      <option key={tag.value} value={tag.value}>
+                        {tag.label}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
