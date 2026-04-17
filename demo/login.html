@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Art Gallery - Login</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="auth-body">
+  <div class="auth-shell">
+    <div class="brand-panel">
+      <div class="brand-badge">Azure Static Web Apps Demo</div>
+      <h1>AI Art Gallery</h1>
+      <p class="brand-subtitle">
+        Share, browse, and manage AI-generated images with prompts, tags, descriptions,
+        comments, and likes.
+      </p>
+
+      <div class="feature-list">
+        <div class="feature-card">
+          <h3>Proposal-aligned scope</h3>
+          <p>Authentication, image upload, browse, search, comments, and likes.</p>
+        </div>
+        <div class="feature-card">
+          <h3>Cloud-friendly frontend</h3>
+          <p>Static HTML/CSS/JS now, easy to migrate into React components later.</p>
+        </div>
+        <div class="feature-card">
+          <h3>API-ready</h3>
+          <p>Designed around your RESTful endpoints under <code>/api/*</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Sign in</h2>
+        <p>Use your account to access the image gallery.</p>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="wayne@example.com" required />
+
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" placeholder="Enter password" required />
+
+        <div class="form-row">
+          <label class="checkbox-row">
+            <input type="checkbox" id="remember" />
+            <span>Remember me</span>
+          </label>
+          <a href="#" class="text-link">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="primary-btn">Login</button>
+
+        <div class="demo-account">
+          <strong>Demo account</strong>
+          <p>Email: demo@aiartgallery.app</p>
+          <p>Password: Password123!</p>
+        </div>
+      </form>
+
+      <div id="loginMessage" class="message-box hidden"></div>
+
+      <div class="auth-footer">
+        <span>New here?</span>
+        <a href="#" class="text-link">Create account</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="login.js"></script>
+</body>
+</html>

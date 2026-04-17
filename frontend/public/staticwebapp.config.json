@@ -1,0 +1,45 @@
+{
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": [
+      "/assets/*.{css,js,png,jpg,jpeg,gif,svg,ico}",
+      "/images/*"
+    ]
+  },
+  "routes": [
+    {
+      "route": "/login",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/register",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/gallery",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/upload",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/images/*",
+      "rewrite": "/index.html"
+    },
+    {
+      "route": "/my-uploads",
+      "rewrite": "/index.html"
+    }
+  ],
+  "responseOverrides": {
+    "404": {
+      "rewrite": "/index.html"
+    }
+  },
+  "globalHeaders": {
+    "X-Frame-Options": "SAMEORIGIN",
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "strict-origin-when-cross-origin"
+  }
+}

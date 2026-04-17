@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Art Gallery - Gallery</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="app-body">
+  <header class="topbar">
+    <div class="brand-inline">
+      <div class="logo-dot"></div>
+      <div>
+        <h1>AI Art Gallery</h1>
+        <p>AI Art Gallery Web Application</p>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <input id="searchInput" type="text" placeholder="Search title, tag, prompt..." />
+      <button id="searchBtn" class="secondary-btn">Search</button>
+      <button id="logoutBtn" class="ghost-btn">Logout</button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <nav>
+        <a href="#" class="nav-item active">Explore</a>
+        <a href="#" class="nav-item">My Uploads</a>
+        <a href="#" class="nav-item">Upload Image</a>
+        <a href="#" class="nav-item">Profile</a>
+      </nav>
+
+      <section class="api-panel">
+        <h3>Connected APIs</h3>
+        <ul>
+          <li>POST /api/auth/login</li>
+          <li>GET /api/images</li>
+          <li>GET /api/images/:id</li>
+          <li>GET /api/images?q=...&tag=...</li>
+          <li>POST /api/images/:id/comments</li>
+          <li>POST /api/images/:id/like</li>
+        </ul>
+      </section>
+    </aside>
+
+    <main class="main-content">
+      <section class="hero-panel">
+        <div>
+          <span class="section-tag">Logged in</span>
+          <h2>Discover AI-generated images</h2>
+          <p>
+            Browse uploads, inspect metadata, and interact with content through comments and likes.
+          </p>
+        </div>
+        <button class="primary-btn">Upload New Image</button>
+      </section>
+
+      <section class="filters">
+        <button class="chip active" data-tag="all">All</button>
+        <button class="chip" data-tag="landscape">Landscape</button>
+        <button class="chip" data-tag="cyberpunk">Cyberpunk</button>
+        <button class="chip" data-tag="portrait">Portrait</button>
+        <button class="chip" data-tag="fantasy">Fantasy</button>
+      </section>
+
+      <section id="galleryGrid" class="gallery-grid"></section>
+    </main>
+  </div>
+
+  <template id="cardTemplate">
+    <article class="image-card">
+      <img class="card-image" src="" alt="" />
+      <div class="card-body">
+        <div class="card-top">
+          <h3 class="card-title"></h3>
+          <span class="tag-pill"></span>
+        </div>
+        <p class="card-description"></p>
+
+        <div class="meta-grid">
+          <div>
+            <span class="meta-label">Platform</span>
+            <span class="meta-value platform-value"></span>
+          </div>
+          <div>
+            <span class="meta-label">Likes</span>
+            <span class="meta-value likes-value"></span>
+          </div>
+        </div>
+
+        <details class="prompt-box">
+          <summary>Prompt</summary>
+          <p class="prompt-value"></p>
+        </details>
+
+        <div class="card-actions">
+          <button class="secondary-btn like-btn">Like</button>
+          <button class="secondary-btn comment-btn">Comment</button>
+          <button class="ghost-btn details-btn">View Details</button>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="gallery.js"></script>
+</body>
+</html>
