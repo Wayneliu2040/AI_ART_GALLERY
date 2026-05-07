@@ -1,0 +1,508 @@
+<?xml version='1.0' encoding='utf-8'?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_Process_UserInteraction" targetNamespace="https://ai-art-gallery.example/bpmn">
+  <bpmn:process id="Process_UserInteraction" name="Current Like, Comment, and User Center Flow" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_Process_UserInteraction">
+      <bpmn:lane id="Lane_User" name="User">
+        <bpmn:flowNodeRef>Start_Detail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ChooseAction</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ClickLike</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_WriteComment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_OpenUserCenter</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Frontend" name="React Frontend">
+        <bpmn:flowNodeRef>Gateway_Action</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckCommentNotEmpty</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_CommentNotEmpty</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_ShowEmptyCommentIgnored</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PostLike</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_PostComment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RequestSummary</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RenderUpdatedDetail</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_RenderUserCenter</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>End_InteractionDone</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Backend" name=".NET Web API">
+        <bpmn:flowNodeRef>Task_CheckAuth</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AuthOk</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckImage</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_ImageExists</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CheckExistingLike</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Gateway_AlreadyLiked</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CreateLike</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_CreateComment</bpmn:flowNodeRef>
+      </bpmn:lane>
+      <bpmn:lane id="Lane_Data" name="Azure SQL Database">
+        <bpmn:flowNodeRef>Task_SaveLike</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_SaveComment</bpmn:flowNodeRef>
+        <bpmn:flowNodeRef>Task_QueryUserSummary</bpmn:flowNodeRef>
+      </bpmn:lane>
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_Detail" name="View image detail or user center">
+      <bpmn:outgoing>F1</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_ChooseAction" name="Choose like, comment, or user center">
+      <bpmn:incoming>F1</bpmn:incoming>
+      <bpmn:outgoing>F2</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_Action" name="Action?">
+      <bpmn:incoming>F2</bpmn:incoming>
+      <bpmn:outgoing>F3</bpmn:outgoing>
+      <bpmn:outgoing>F18</bpmn:outgoing>
+      <bpmn:outgoing>F27</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_ClickLike" name="Click Like This Image">
+      <bpmn:incoming>F3</bpmn:incoming>
+      <bpmn:outgoing>F4</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_PostLike" name="POST /api/images/{id}/like">
+      <bpmn:incoming>F4</bpmn:incoming>
+      <bpmn:outgoing>F5</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_WriteComment" name="Write comment">
+      <bpmn:incoming>F18</bpmn:incoming>
+      <bpmn:outgoing>F19</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_CheckCommentNotEmpty" name="Frontend checks comment is not empty">
+      <bpmn:incoming>F19</bpmn:incoming>
+      <bpmn:outgoing>F20</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_CommentNotEmpty" name="Has text?">
+      <bpmn:incoming>F20</bpmn:incoming>
+      <bpmn:outgoing>F21</bpmn:outgoing>
+      <bpmn:outgoing>F23</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_ShowEmptyCommentIgnored" name="Do not submit empty comment">
+      <bpmn:incoming>F21</bpmn:incoming>
+      <bpmn:outgoing>F22</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_PostComment" name="POST /api/images/{id}/comments">
+      <bpmn:incoming>F23</bpmn:incoming>
+      <bpmn:outgoing>F24</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_OpenUserCenter" name="Open User Center">
+      <bpmn:incoming>F27</bpmn:incoming>
+      <bpmn:outgoing>F28</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_RequestSummary" name="GET /api/users/me/summary">
+      <bpmn:incoming>F28</bpmn:incoming>
+      <bpmn:outgoing>F29</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_CheckAuth" name="Validate JWT">
+      <bpmn:incoming>F5</bpmn:incoming>
+      <bpmn:incoming>F24</bpmn:incoming>
+      <bpmn:outgoing>F6</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_AuthOk" name="Authorized?">
+      <bpmn:incoming>F6</bpmn:incoming>
+      <bpmn:outgoing>F7</bpmn:outgoing>
+      <bpmn:outgoing>F8</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_CheckImage" name="Find image by id">
+      <bpmn:incoming>F7</bpmn:incoming>
+      <bpmn:outgoing>F9</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_ImageExists" name="Image exists?">
+      <bpmn:incoming>F9</bpmn:incoming>
+      <bpmn:outgoing>F10</bpmn:outgoing>
+      <bpmn:outgoing>F11</bpmn:outgoing>
+      <bpmn:outgoing>F12</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_CheckExistingLike" name="Check existing like">
+      <bpmn:incoming>F10</bpmn:incoming>
+      <bpmn:outgoing>F13</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_AlreadyLiked" name="Already liked?">
+      <bpmn:incoming>F13</bpmn:incoming>
+      <bpmn:outgoing>F14</bpmn:outgoing>
+      <bpmn:outgoing>F15</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_CreateLike" name="Create like entity">
+      <bpmn:incoming>F15</bpmn:incoming>
+      <bpmn:outgoing>F16</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_SaveLike" name="Save like">
+      <bpmn:incoming>F16</bpmn:incoming>
+      <bpmn:outgoing>F17</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_CreateComment" name="Create comment entity">
+      <bpmn:incoming>F11</bpmn:incoming>
+      <bpmn:outgoing>F25</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_SaveComment" name="Save comment">
+      <bpmn:incoming>F25</bpmn:incoming>
+      <bpmn:outgoing>F26</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_QueryUserSummary" name="Count uploads, received likes, received comments">
+      <bpmn:incoming>F29</bpmn:incoming>
+      <bpmn:outgoing>F30</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_RenderUpdatedDetail" name="Update likes/comments on page">
+      <bpmn:incoming>F8</bpmn:incoming>
+      <bpmn:incoming>F12</bpmn:incoming>
+      <bpmn:incoming>F14</bpmn:incoming>
+      <bpmn:incoming>F17</bpmn:incoming>
+      <bpmn:incoming>F26</bpmn:incoming>
+      <bpmn:outgoing>F32</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_RenderUserCenter" name="Render User Center statistics">
+      <bpmn:incoming>F30</bpmn:incoming>
+      <bpmn:outgoing>F31</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_InteractionDone" name="Interaction complete">
+      <bpmn:incoming>F22</bpmn:incoming>
+      <bpmn:incoming>F31</bpmn:incoming>
+      <bpmn:incoming>F32</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="F1" sourceRef="Start_Detail" targetRef="Task_ChooseAction" />
+    <bpmn:sequenceFlow id="F2" sourceRef="Task_ChooseAction" targetRef="Gateway_Action" />
+    <bpmn:sequenceFlow id="F3" sourceRef="Gateway_Action" targetRef="Task_ClickLike" name="Like" />
+    <bpmn:sequenceFlow id="F4" sourceRef="Task_ClickLike" targetRef="Task_PostLike" />
+    <bpmn:sequenceFlow id="F5" sourceRef="Task_PostLike" targetRef="Task_CheckAuth" />
+    <bpmn:sequenceFlow id="F6" sourceRef="Task_CheckAuth" targetRef="Gateway_AuthOk" />
+    <bpmn:sequenceFlow id="F7" sourceRef="Gateway_AuthOk" targetRef="Task_CheckImage" name="Yes" />
+    <bpmn:sequenceFlow id="F8" sourceRef="Gateway_AuthOk" targetRef="Task_RenderUpdatedDetail" name="No" />
+    <bpmn:sequenceFlow id="F9" sourceRef="Task_CheckImage" targetRef="Gateway_ImageExists" />
+    <bpmn:sequenceFlow id="F10" sourceRef="Gateway_ImageExists" targetRef="Task_CheckExistingLike" name="Like path" />
+    <bpmn:sequenceFlow id="F11" sourceRef="Gateway_ImageExists" targetRef="Task_CreateComment" name="Comment path" />
+    <bpmn:sequenceFlow id="F12" sourceRef="Gateway_ImageExists" targetRef="Task_RenderUpdatedDetail" name="No" />
+    <bpmn:sequenceFlow id="F13" sourceRef="Task_CheckExistingLike" targetRef="Gateway_AlreadyLiked" />
+    <bpmn:sequenceFlow id="F14" sourceRef="Gateway_AlreadyLiked" targetRef="Task_RenderUpdatedDetail" name="Yes" />
+    <bpmn:sequenceFlow id="F15" sourceRef="Gateway_AlreadyLiked" targetRef="Task_CreateLike" name="No" />
+    <bpmn:sequenceFlow id="F16" sourceRef="Task_CreateLike" targetRef="Task_SaveLike" />
+    <bpmn:sequenceFlow id="F17" sourceRef="Task_SaveLike" targetRef="Task_RenderUpdatedDetail" />
+    <bpmn:sequenceFlow id="F18" sourceRef="Gateway_Action" targetRef="Task_WriteComment" name="Comment" />
+    <bpmn:sequenceFlow id="F19" sourceRef="Task_WriteComment" targetRef="Task_CheckCommentNotEmpty" />
+    <bpmn:sequenceFlow id="F20" sourceRef="Task_CheckCommentNotEmpty" targetRef="Gateway_CommentNotEmpty" />
+    <bpmn:sequenceFlow id="F21" sourceRef="Gateway_CommentNotEmpty" targetRef="Task_ShowEmptyCommentIgnored" name="No" />
+    <bpmn:sequenceFlow id="F22" sourceRef="Task_ShowEmptyCommentIgnored" targetRef="End_InteractionDone" />
+    <bpmn:sequenceFlow id="F23" sourceRef="Gateway_CommentNotEmpty" targetRef="Task_PostComment" name="Yes" />
+    <bpmn:sequenceFlow id="F24" sourceRef="Task_PostComment" targetRef="Task_CheckAuth" />
+    <bpmn:sequenceFlow id="F25" sourceRef="Task_CreateComment" targetRef="Task_SaveComment" />
+    <bpmn:sequenceFlow id="F26" sourceRef="Task_SaveComment" targetRef="Task_RenderUpdatedDetail" />
+    <bpmn:sequenceFlow id="F27" sourceRef="Gateway_Action" targetRef="Task_OpenUserCenter" name="User Center" />
+    <bpmn:sequenceFlow id="F28" sourceRef="Task_OpenUserCenter" targetRef="Task_RequestSummary" />
+    <bpmn:sequenceFlow id="F29" sourceRef="Task_RequestSummary" targetRef="Task_QueryUserSummary" />
+    <bpmn:sequenceFlow id="F30" sourceRef="Task_QueryUserSummary" targetRef="Task_RenderUserCenter" />
+    <bpmn:sequenceFlow id="F31" sourceRef="Task_RenderUserCenter" targetRef="End_InteractionDone" />
+    <bpmn:sequenceFlow id="F32" sourceRef="Task_RenderUpdatedDetail" targetRef="End_InteractionDone" />
+    <bpmn:dataObjectReference id="Data_Comment" name="Comment Text" />
+    <bpmn:association id="Association_Task_CheckCommentNotEmpty_Data_Comment" sourceRef="Task_CheckCommentNotEmpty" targetRef="Data_Comment" />
+    <bpmn:dataObjectReference id="Data_LikeResult" name="Like Count Result" />
+    <bpmn:association id="Association_Task_RenderUpdatedDetail_Data_LikeResult" sourceRef="Task_RenderUpdatedDetail" targetRef="Data_LikeResult" />
+    <bpmn:dataObjectReference id="Data_Summary" name="User Summary DTO" />
+    <bpmn:association id="Association_Task_RenderUserCenter_Data_Summary" sourceRef="Task_RenderUserCenter" targetRef="Data_Summary" />
+    <bpmn:dataStoreReference id="Store_Likes" name="Likes Table" />
+    <bpmn:association id="Association_Task_SaveLike_Store_Likes" sourceRef="Task_SaveLike" targetRef="Store_Likes" />
+    <bpmn:dataStoreReference id="Store_Comments" name="Comments Table" />
+    <bpmn:association id="Association_Task_SaveComment_Store_Comments" sourceRef="Task_SaveComment" targetRef="Store_Comments" />
+    <bpmn:dataStoreReference id="Store_UserStats" name="Images / Likes / Comments" />
+    <bpmn:association id="Association_Task_QueryUserSummary_Store_UserStats" sourceRef="Task_QueryUserSummary" targetRef="Store_UserStats" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_Process_UserInteraction">
+    <bpmndi:BPMNPlane id="Plane_Process_UserInteraction" bpmnElement="Process_UserInteraction">
+      <bpmndi:BPMNShape id="Shape_Start_Detail" bpmnElement="Start_Detail">
+        <dc:Bounds x="70" y="260" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ChooseAction" bpmnElement="Task_ChooseAction">
+        <dc:Bounds x="140" y="240" width="200" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_Action" bpmnElement="Gateway_Action">
+        <dc:Bounds x="400" y="250" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ClickLike" bpmnElement="Task_ClickLike">
+        <dc:Bounds x="520" y="80" width="160" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_PostLike" bpmnElement="Task_PostLike">
+        <dc:Bounds x="730" y="80" width="190" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_WriteComment" bpmnElement="Task_WriteComment">
+        <dc:Bounds x="520" y="260" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CheckCommentNotEmpty" bpmnElement="Task_CheckCommentNotEmpty">
+        <dc:Bounds x="720" y="260" width="220" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_CommentNotEmpty" bpmnElement="Gateway_CommentNotEmpty">
+        <dc:Bounds x="990" y="270" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ShowEmptyCommentIgnored" bpmnElement="Task_ShowEmptyCommentIgnored">
+        <dc:Bounds x="1100" y="390" width="190" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_PostComment" bpmnElement="Task_PostComment">
+        <dc:Bounds x="1100" y="260" width="220" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_OpenUserCenter" bpmnElement="Task_OpenUserCenter">
+        <dc:Bounds x="520" y="540" width="160" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_RequestSummary" bpmnElement="Task_RequestSummary">
+        <dc:Bounds x="730" y="540" width="200" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CheckAuth" bpmnElement="Task_CheckAuth">
+        <dc:Bounds x="980" y="110" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_AuthOk" bpmnElement="Gateway_AuthOk">
+        <dc:Bounds x="1190" y="120" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CheckImage" bpmnElement="Task_CheckImage">
+        <dc:Bounds x="1310" y="110" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ImageExists" bpmnElement="Gateway_ImageExists">
+        <dc:Bounds x="1510" y="120" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CheckExistingLike" bpmnElement="Task_CheckExistingLike">
+        <dc:Bounds x="1630" y="40" width="160" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_AlreadyLiked" bpmnElement="Gateway_AlreadyLiked">
+        <dc:Bounds x="1840" y="50" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CreateLike" bpmnElement="Task_CreateLike">
+        <dc:Bounds x="1950" y="40" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_SaveLike" bpmnElement="Task_SaveLike">
+        <dc:Bounds x="2160" y="40" width="140" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_CreateComment" bpmnElement="Task_CreateComment">
+        <dc:Bounds x="1630" y="210" width="170" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_SaveComment" bpmnElement="Task_SaveComment">
+        <dc:Bounds x="1850" y="210" width="150" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_QueryUserSummary" bpmnElement="Task_QueryUserSummary">
+        <dc:Bounds x="980" y="540" width="260" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_RenderUpdatedDetail" bpmnElement="Task_RenderUpdatedDetail">
+        <dc:Bounds x="2360" y="150" width="210" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_RenderUserCenter" bpmnElement="Task_RenderUserCenter">
+        <dc:Bounds x="1290" y="540" width="210" height="70" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_InteractionDone" bpmnElement="End_InteractionDone">
+        <dc:Bounds x="2630" y="172" width="36" height="36" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Data_Comment" bpmnElement="Data_Comment">
+        <dc:Bounds x="740" y="350" width="120" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Data_LikeResult" bpmnElement="Data_LikeResult">
+        <dc:Bounds x="2380" y="70" width="130" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Data_Summary" bpmnElement="Data_Summary">
+        <dc:Bounds x="1310" y="460" width="140" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Store_Likes" bpmnElement="Store_Likes">
+        <dc:Bounds x="2170" y="120" width="130" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Store_Comments" bpmnElement="Store_Comments">
+        <dc:Bounds x="1860" y="290" width="140" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Store_UserStats" bpmnElement="Store_UserStats">
+        <dc:Bounds x="1010" y="640" width="170" height="60" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_F1" bpmnElement="F1">
+        <di:waypoint x="106" y="278" />
+        <di:waypoint x="123" y="278" />
+        <di:waypoint x="123" y="275" />
+        <di:waypoint x="140" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F2" bpmnElement="F2">
+        <di:waypoint x="340" y="275" />
+        <di:waypoint x="370" y="275" />
+        <di:waypoint x="400" y="275" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F3" bpmnElement="F3">
+        <di:waypoint x="450" y="275" />
+        <di:waypoint x="485" y="275" />
+        <di:waypoint x="485" y="115" />
+        <di:waypoint x="520" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F4" bpmnElement="F4">
+        <di:waypoint x="680" y="115" />
+        <di:waypoint x="705" y="115" />
+        <di:waypoint x="730" y="115" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F5" bpmnElement="F5">
+        <di:waypoint x="920" y="115" />
+        <di:waypoint x="950" y="115" />
+        <di:waypoint x="950" y="145" />
+        <di:waypoint x="980" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F6" bpmnElement="F6">
+        <di:waypoint x="1130" y="145" />
+        <di:waypoint x="1160" y="145" />
+        <di:waypoint x="1190" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F7" bpmnElement="F7">
+        <di:waypoint x="1240" y="145" />
+        <di:waypoint x="1275" y="145" />
+        <di:waypoint x="1310" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F8" bpmnElement="F8">
+        <di:waypoint x="1240" y="145" />
+        <di:waypoint x="1800" y="145" />
+        <di:waypoint x="1800" y="185" />
+        <di:waypoint x="2360" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F9" bpmnElement="F9">
+        <di:waypoint x="1460" y="145" />
+        <di:waypoint x="1485" y="145" />
+        <di:waypoint x="1510" y="145" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F10" bpmnElement="F10">
+        <di:waypoint x="1560" y="145" />
+        <di:waypoint x="1595" y="145" />
+        <di:waypoint x="1595" y="75" />
+        <di:waypoint x="1630" y="75" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F11" bpmnElement="F11">
+        <di:waypoint x="1560" y="145" />
+        <di:waypoint x="1595" y="145" />
+        <di:waypoint x="1595" y="245" />
+        <di:waypoint x="1630" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F12" bpmnElement="F12">
+        <di:waypoint x="1560" y="145" />
+        <di:waypoint x="1960" y="145" />
+        <di:waypoint x="1960" y="185" />
+        <di:waypoint x="2360" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F13" bpmnElement="F13">
+        <di:waypoint x="1790" y="75" />
+        <di:waypoint x="1815" y="75" />
+        <di:waypoint x="1840" y="75" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F14" bpmnElement="F14">
+        <di:waypoint x="1890" y="75" />
+        <di:waypoint x="2125" y="75" />
+        <di:waypoint x="2125" y="185" />
+        <di:waypoint x="2360" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F15" bpmnElement="F15">
+        <di:waypoint x="1890" y="75" />
+        <di:waypoint x="1920" y="75" />
+        <di:waypoint x="1950" y="75" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F16" bpmnElement="F16">
+        <di:waypoint x="2100" y="75" />
+        <di:waypoint x="2130" y="75" />
+        <di:waypoint x="2160" y="75" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F17" bpmnElement="F17">
+        <di:waypoint x="2300" y="75" />
+        <di:waypoint x="2330" y="75" />
+        <di:waypoint x="2330" y="185" />
+        <di:waypoint x="2360" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F18" bpmnElement="F18">
+        <di:waypoint x="450" y="275" />
+        <di:waypoint x="485" y="275" />
+        <di:waypoint x="485" y="295" />
+        <di:waypoint x="520" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F19" bpmnElement="F19">
+        <di:waypoint x="670" y="295" />
+        <di:waypoint x="695" y="295" />
+        <di:waypoint x="720" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F20" bpmnElement="F20">
+        <di:waypoint x="940" y="295" />
+        <di:waypoint x="965" y="295" />
+        <di:waypoint x="990" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F21" bpmnElement="F21">
+        <di:waypoint x="1040" y="295" />
+        <di:waypoint x="1070" y="295" />
+        <di:waypoint x="1070" y="425" />
+        <di:waypoint x="1100" y="425" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F22" bpmnElement="F22">
+        <di:waypoint x="1290" y="425" />
+        <di:waypoint x="1960" y="425" />
+        <di:waypoint x="1960" y="190" />
+        <di:waypoint x="2630" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F23" bpmnElement="F23">
+        <di:waypoint x="1040" y="295" />
+        <di:waypoint x="1070" y="295" />
+        <di:waypoint x="1100" y="295" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F24" bpmnElement="F24">
+        <di:waypoint x="1210" y="330" />
+        <di:waypoint x="1210" y="385" />
+        <di:waypoint x="1055" y="385" />
+        <di:waypoint x="1055" y="110" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F25" bpmnElement="F25">
+        <di:waypoint x="1800" y="245" />
+        <di:waypoint x="1825" y="245" />
+        <di:waypoint x="1850" y="245" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F26" bpmnElement="F26">
+        <di:waypoint x="2000" y="245" />
+        <di:waypoint x="2180" y="245" />
+        <di:waypoint x="2180" y="185" />
+        <di:waypoint x="2360" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F27" bpmnElement="F27">
+        <di:waypoint x="450" y="275" />
+        <di:waypoint x="485" y="275" />
+        <di:waypoint x="485" y="575" />
+        <di:waypoint x="520" y="575" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F28" bpmnElement="F28">
+        <di:waypoint x="680" y="575" />
+        <di:waypoint x="705" y="575" />
+        <di:waypoint x="730" y="575" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F29" bpmnElement="F29">
+        <di:waypoint x="930" y="575" />
+        <di:waypoint x="955" y="575" />
+        <di:waypoint x="980" y="575" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F30" bpmnElement="F30">
+        <di:waypoint x="1240" y="575" />
+        <di:waypoint x="1265" y="575" />
+        <di:waypoint x="1290" y="575" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F31" bpmnElement="F31">
+        <di:waypoint x="1500" y="575" />
+        <di:waypoint x="2065" y="575" />
+        <di:waypoint x="2065" y="190" />
+        <di:waypoint x="2630" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_F32" bpmnElement="F32">
+        <di:waypoint x="2570" y="185" />
+        <di:waypoint x="2600" y="185" />
+        <di:waypoint x="2600" y="190" />
+        <di:waypoint x="2630" y="190" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_CheckCommentNotEmpty_Data_Comment" bpmnElement="Association_Task_CheckCommentNotEmpty_Data_Comment">
+        <di:waypoint x="830" y="330" />
+        <di:waypoint x="815" y="340" />
+        <di:waypoint x="800" y="350" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_RenderUpdatedDetail_Data_LikeResult" bpmnElement="Association_Task_RenderUpdatedDetail_Data_LikeResult">
+        <di:waypoint x="2465" y="150" />
+        <di:waypoint x="2455" y="140" />
+        <di:waypoint x="2445" y="130" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_RenderUserCenter_Data_Summary" bpmnElement="Association_Task_RenderUserCenter_Data_Summary">
+        <di:waypoint x="1395" y="540" />
+        <di:waypoint x="1387" y="530" />
+        <di:waypoint x="1380" y="520" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_SaveLike_Store_Likes" bpmnElement="Association_Task_SaveLike_Store_Likes">
+        <di:waypoint x="2230" y="110" />
+        <di:waypoint x="2232" y="115" />
+        <di:waypoint x="2235" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_SaveComment_Store_Comments" bpmnElement="Association_Task_SaveComment_Store_Comments">
+        <di:waypoint x="1925" y="280" />
+        <di:waypoint x="1927" y="285" />
+        <di:waypoint x="1930" y="290" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_QueryUserSummary_Store_UserStats" bpmnElement="Association_Task_QueryUserSummary_Store_UserStats">
+        <di:waypoint x="1110" y="610" />
+        <di:waypoint x="1102" y="625" />
+        <di:waypoint x="1095" y="640" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

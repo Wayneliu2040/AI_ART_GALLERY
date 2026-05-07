@@ -1,0 +1,573 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" id="Definitions_ImageUpload" targetNamespace="https://ai-art-gallery.example/bpmn" exporter="Camunda Modeler" exporterVersion="5.46.1">
+  <bpmn:process id="Process_ImageUpload" name="Image Upload, Storage, and Compensation Flow" isExecutable="false">
+    <bpmn:laneSet id="LaneSet_ImageUpload">
+      <bpmn:lane id="Lane_User" name="User" />
+      <bpmn:lane id="Lane_Frontend" name="React Frontend" />
+      <bpmn:lane id="Lane_Backend" name=".NET Web API" />
+      <bpmn:lane id="Lane_Storage" name="Azure Blob Storage" />
+      <bpmn:lane id="Lane_Database" name="Azure SQL Database" />
+    </bpmn:laneSet>
+    <bpmn:startEvent id="Start_OpenUpload" name="User opens Upload Image page">
+      <bpmn:outgoing>Flow_Start_ShowUploads</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:task id="Task_ShowUploadedImages" name="Load and show previous uploads">
+      <bpmn:incoming>Flow_Start_ShowUploads</bpmn:incoming>
+      <bpmn:outgoing>Flow_ShowUploads_ClickUpload</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ClickUploadButton" name="Click Upload button">
+      <bpmn:incoming>Flow_ShowUploads_ClickUpload</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClickUpload_OpenModal</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_OpenUploadModal" name="Open upload modal">
+      <bpmn:incoming>Flow_ClickUpload_OpenModal</bpmn:incoming>
+      <bpmn:outgoing>Flow_OpenModal_FillForm</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_FillUploadForm" name="Enter title, tag, platform, description, prompt, and image">
+      <bpmn:incoming>Flow_OpenModal_FillForm</bpmn:incoming>
+      <bpmn:outgoing>Flow_FillForm_ClientValidation</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ClientValidation" name="Validate required fields and file type">
+      <bpmn:incoming>Flow_FillForm_ClientValidation</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClientValidation_Gateway</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_ClientValid" name="Client form valid?">
+      <bpmn:incoming>Flow_ClientValidation_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClientValid_SendRequest</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ClientInvalid_ShowError</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_ShowClientError" name="Show missing field or invalid file message">
+      <bpmn:incoming>Flow_ClientInvalid_ShowError</bpmn:incoming>
+      <bpmn:outgoing>Flow_ClientError_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_SendMultipartRequest" name="POST /api/images multipart request">
+      <bpmn:incoming>Flow_ClientValid_SendRequest</bpmn:incoming>
+      <bpmn:outgoing>Flow_SendRequest_Authenticate</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="Boundary_SlowUpload" name="Slow upload timer" cancelActivity="false" attachedToRef="Task_SendMultipartRequest">
+      <bpmn:outgoing>Flow_SlowUpload_Notice</bpmn:outgoing>
+      <bpmn:timerEventDefinition />
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_ShowSlowUploadNotice" name="Show non-blocking upload progress notice">
+      <bpmn:incoming>Flow_SlowUpload_Notice</bpmn:incoming>
+      <bpmn:outgoing>Flow_SlowNotice_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_AuthenticateUpload" name="Validate JWT and user ownership context">
+      <bpmn:incoming>Flow_SendRequest_Authenticate</bpmn:incoming>
+      <bpmn:outgoing>Flow_Authenticate_Gateway</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:exclusiveGateway id="Gateway_AuthValid" name="Authorized?">
+      <bpmn:incoming>Flow_Authenticate_Gateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_Authorized_ParallelStart</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Unauthorized_Error</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:parallelGateway id="Gateway_ParallelValidationStart" name="Start parallel validation">
+      <bpmn:incoming>Flow_Authorized_ParallelStart</bpmn:incoming>
+      <bpmn:outgoing>Flow_Parallel_Metadata</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Parallel_File</bpmn:outgoing>
+      <bpmn:outgoing>Flow_Parallel_Scan</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:task id="Task_ValidateMetadata" name="Validate title, tag, description, and prompt">
+      <bpmn:incoming>Flow_Parallel_Metadata</bpmn:incoming>
+      <bpmn:outgoing>Flow_Metadata_ParallelEnd</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ValidateFile" name="Validate image extension and size limit">
+      <bpmn:incoming>Flow_Parallel_File</bpmn:incoming>
+      <bpmn:outgoing>Flow_File_ParallelEnd</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ScanFile" name="Optional file safety scan">
+      <bpmn:incoming>Flow_Parallel_Scan</bpmn:incoming>
+      <bpmn:outgoing>Flow_Scan_ParallelEnd</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:parallelGateway id="Gateway_ParallelValidationEnd" name="All validations complete">
+      <bpmn:incoming>Flow_Metadata_ParallelEnd</bpmn:incoming>
+      <bpmn:incoming>Flow_File_ParallelEnd</bpmn:incoming>
+      <bpmn:incoming>Flow_Scan_ParallelEnd</bpmn:incoming>
+      <bpmn:outgoing>Flow_ParallelEnd_ServerGateway</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:exclusiveGateway id="Gateway_ServerValid" name="Server validation passed?">
+      <bpmn:incoming>Flow_ParallelEnd_ServerGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ServerValid_PrepareBlob</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ServerInvalid_Error</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:task id="Task_PrepareBlobName" name="Generate unique Blob path and file name">
+      <bpmn:incoming>Flow_ServerValid_PrepareBlob</bpmn:incoming>
+      <bpmn:outgoing>Flow_PrepareBlob_Upload</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_UploadBlob" name="Upload image bytes to Azure Blob Storage">
+      <bpmn:incoming>Flow_PrepareBlob_Upload</bpmn:incoming>
+      <bpmn:outgoing>Flow_UploadBlob_SaveMetadata</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="Boundary_BlobUploadError" name="Blob upload error" attachedToRef="Task_UploadBlob">
+      <bpmn:outgoing>Flow_BlobError_ReturnError</bpmn:outgoing>
+      <bpmn:errorEventDefinition />
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_SaveImageMetadata" name="Save Blob URL and metadata to Images table">
+      <bpmn:incoming>Flow_UploadBlob_SaveMetadata</bpmn:incoming>
+      <bpmn:outgoing>Flow_SaveMetadata_ReturnCreated</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:boundaryEvent id="Boundary_MetadataSaveError" name="SQL save error" attachedToRef="Task_SaveImageMetadata">
+      <bpmn:outgoing>Flow_MetadataError_DeleteBlob</bpmn:outgoing>
+      <bpmn:errorEventDefinition />
+    </bpmn:boundaryEvent>
+    <bpmn:task id="Task_DeleteBlobCompensation" name="Compensation: delete uploaded Blob">
+      <bpmn:incoming>Flow_MetadataError_DeleteBlob</bpmn:incoming>
+      <bpmn:outgoing>Flow_DeleteBlob_ReturnError</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ReturnCreatedImage" name="Return created image JSON">
+      <bpmn:incoming>Flow_SaveMetadata_ReturnCreated</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReturnCreated_UpdateUI</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_ReturnUploadError" name="Return upload error response">
+      <bpmn:incoming>Flow_Unauthorized_Error</bpmn:incoming>
+      <bpmn:incoming>Flow_ServerInvalid_Error</bpmn:incoming>
+      <bpmn:incoming>Flow_BlobError_ReturnError</bpmn:incoming>
+      <bpmn:incoming>Flow_DeleteBlob_ReturnError</bpmn:incoming>
+      <bpmn:outgoing>Flow_ReturnError_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:task id="Task_UpdateUploadList" name="Close modal and prepend uploaded artwork card">
+      <bpmn:incoming>Flow_ReturnCreated_UpdateUI</bpmn:incoming>
+      <bpmn:outgoing>Flow_UpdateUI_End</bpmn:outgoing>
+    </bpmn:task>
+    <bpmn:endEvent id="End_UploadSuccess" name="Artwork available in gallery">
+      <bpmn:incoming>Flow_UpdateUI_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_UploadFailed" name="Upload stopped with feedback">
+      <bpmn:incoming>Flow_ClientError_End</bpmn:incoming>
+      <bpmn:incoming>Flow_ReturnError_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:endEvent id="End_ProgressNotice" name="Progress notice displayed">
+      <bpmn:incoming>Flow_SlowNotice_End</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_Start_ShowUploads" sourceRef="Start_OpenUpload" targetRef="Task_ShowUploadedImages" />
+    <bpmn:sequenceFlow id="Flow_ShowUploads_ClickUpload" sourceRef="Task_ShowUploadedImages" targetRef="Task_ClickUploadButton" />
+    <bpmn:sequenceFlow id="Flow_ClickUpload_OpenModal" sourceRef="Task_ClickUploadButton" targetRef="Task_OpenUploadModal" />
+    <bpmn:sequenceFlow id="Flow_OpenModal_FillForm" sourceRef="Task_OpenUploadModal" targetRef="Task_FillUploadForm" />
+    <bpmn:sequenceFlow id="Flow_FillForm_ClientValidation" sourceRef="Task_FillUploadForm" targetRef="Task_ClientValidation" />
+    <bpmn:sequenceFlow id="Flow_ClientValidation_Gateway" sourceRef="Task_ClientValidation" targetRef="Gateway_ClientValid" />
+    <bpmn:sequenceFlow id="Flow_ClientValid_SendRequest" name="Valid" sourceRef="Gateway_ClientValid" targetRef="Task_SendMultipartRequest" />
+    <bpmn:sequenceFlow id="Flow_ClientInvalid_ShowError" name="Invalid" sourceRef="Gateway_ClientValid" targetRef="Task_ShowClientError" />
+    <bpmn:sequenceFlow id="Flow_ClientError_End" sourceRef="Task_ShowClientError" targetRef="End_UploadFailed" />
+    <bpmn:sequenceFlow id="Flow_SlowUpload_Notice" sourceRef="Boundary_SlowUpload" targetRef="Task_ShowSlowUploadNotice" />
+    <bpmn:sequenceFlow id="Flow_SlowNotice_End" sourceRef="Task_ShowSlowUploadNotice" targetRef="End_ProgressNotice" />
+    <bpmn:sequenceFlow id="Flow_SendRequest_Authenticate" sourceRef="Task_SendMultipartRequest" targetRef="Task_AuthenticateUpload" />
+    <bpmn:sequenceFlow id="Flow_Authenticate_Gateway" sourceRef="Task_AuthenticateUpload" targetRef="Gateway_AuthValid" />
+    <bpmn:sequenceFlow id="Flow_Authorized_ParallelStart" name="Authorized" sourceRef="Gateway_AuthValid" targetRef="Gateway_ParallelValidationStart" />
+    <bpmn:sequenceFlow id="Flow_Unauthorized_Error" name="Unauthorized" sourceRef="Gateway_AuthValid" targetRef="Task_ReturnUploadError" />
+    <bpmn:sequenceFlow id="Flow_Parallel_Metadata" sourceRef="Gateway_ParallelValidationStart" targetRef="Task_ValidateMetadata" />
+    <bpmn:sequenceFlow id="Flow_Parallel_File" sourceRef="Gateway_ParallelValidationStart" targetRef="Task_ValidateFile" />
+    <bpmn:sequenceFlow id="Flow_Parallel_Scan" sourceRef="Gateway_ParallelValidationStart" targetRef="Task_ScanFile" />
+    <bpmn:sequenceFlow id="Flow_Metadata_ParallelEnd" sourceRef="Task_ValidateMetadata" targetRef="Gateway_ParallelValidationEnd" />
+    <bpmn:sequenceFlow id="Flow_File_ParallelEnd" sourceRef="Task_ValidateFile" targetRef="Gateway_ParallelValidationEnd" />
+    <bpmn:sequenceFlow id="Flow_Scan_ParallelEnd" sourceRef="Task_ScanFile" targetRef="Gateway_ParallelValidationEnd" />
+    <bpmn:sequenceFlow id="Flow_ParallelEnd_ServerGateway" sourceRef="Gateway_ParallelValidationEnd" targetRef="Gateway_ServerValid" />
+    <bpmn:sequenceFlow id="Flow_ServerValid_PrepareBlob" name="Passed" sourceRef="Gateway_ServerValid" targetRef="Task_PrepareBlobName" />
+    <bpmn:sequenceFlow id="Flow_ServerInvalid_Error" name="Failed" sourceRef="Gateway_ServerValid" targetRef="Task_ReturnUploadError" />
+    <bpmn:sequenceFlow id="Flow_PrepareBlob_Upload" sourceRef="Task_PrepareBlobName" targetRef="Task_UploadBlob" />
+    <bpmn:sequenceFlow id="Flow_UploadBlob_SaveMetadata" sourceRef="Task_UploadBlob" targetRef="Task_SaveImageMetadata" />
+    <bpmn:sequenceFlow id="Flow_BlobError_ReturnError" sourceRef="Boundary_BlobUploadError" targetRef="Task_ReturnUploadError" />
+    <bpmn:sequenceFlow id="Flow_SaveMetadata_ReturnCreated" sourceRef="Task_SaveImageMetadata" targetRef="Task_ReturnCreatedImage" />
+    <bpmn:sequenceFlow id="Flow_MetadataError_DeleteBlob" sourceRef="Boundary_MetadataSaveError" targetRef="Task_DeleteBlobCompensation" />
+    <bpmn:sequenceFlow id="Flow_DeleteBlob_ReturnError" sourceRef="Task_DeleteBlobCompensation" targetRef="Task_ReturnUploadError" />
+    <bpmn:sequenceFlow id="Flow_ReturnCreated_UpdateUI" sourceRef="Task_ReturnCreatedImage" targetRef="Task_UpdateUploadList" />
+    <bpmn:sequenceFlow id="Flow_ReturnError_End" sourceRef="Task_ReturnUploadError" targetRef="End_UploadFailed" />
+    <bpmn:sequenceFlow id="Flow_UpdateUI_End" sourceRef="Task_UpdateUploadList" targetRef="End_UploadSuccess" />
+    <bpmn:dataObjectReference id="DataObject_ImageFile" name="Image File" />
+    <bpmn:dataObjectReference id="DataObject_MetadataForm" name="Artwork Metadata" />
+    <bpmn:dataObjectReference id="DataObject_BlobUrl" name="Blob URL" />
+    <bpmn:dataObjectReference id="DataObject_CreatedImageJson" name="Created Image JSON" />
+    <bpmn:dataStoreReference id="DataStore_BlobStorage" name="Azure Blob Container" />
+    <bpmn:dataStoreReference id="DataStore_ImagesTable" name="Images Table" />
+    <bpmn:association id="Association_Task_FillUploadForm_DataObject_ImageFile" sourceRef="Task_FillUploadForm" targetRef="DataObject_ImageFile" />
+    <bpmn:association id="Association_Task_ClientValidation_DataObject_MetadataForm" sourceRef="Task_ClientValidation" targetRef="DataObject_MetadataForm" />
+    <bpmn:association id="Association_Task_UploadBlob_DataObject_BlobUrl" sourceRef="Task_UploadBlob" targetRef="DataObject_BlobUrl" />
+    <bpmn:association id="Association_Task_ReturnCreatedImage_DataObject_CreatedImageJson" sourceRef="Task_ReturnCreatedImage" targetRef="DataObject_CreatedImageJson" />
+    <bpmn:association id="Association_Task_UploadBlob_DataStore_BlobStorage" sourceRef="Task_UploadBlob" targetRef="DataStore_BlobStorage" />
+    <bpmn:association id="Association_Task_SaveImageMetadata_DataStore_ImagesTable" sourceRef="Task_SaveImageMetadata" targetRef="DataStore_ImagesTable" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="Diagram_ImageUpload">
+    <bpmndi:BPMNPlane id="Plane_ImageUpload" bpmnElement="Process_ImageUpload">
+      <bpmndi:BPMNShape id="Shape_Start_OpenUpload" bpmnElement="Start_OpenUpload">
+        <dc:Bounds x="170" y="290" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="153" y="326" width="70" height="40" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ShowUploadedImages" bpmnElement="Task_ShowUploadedImages">
+        <dc:Bounds x="240" y="268" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ClickUploadButton" bpmnElement="Task_ClickUploadButton">
+        <dc:Bounds x="460" y="268" width="140" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_OpenUploadModal" bpmnElement="Task_OpenUploadModal">
+        <dc:Bounds x="650" y="268" width="150" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_FillUploadForm" bpmnElement="Task_FillUploadForm">
+        <dc:Bounds x="850" y="268" width="210" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ClientValidation" bpmnElement="Task_ClientValidation">
+        <dc:Bounds x="1110" y="268" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ClientValid" bpmnElement="Gateway_ClientValid" isMarkerVisible="true">
+        <dc:Bounds x="1330" y="283" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1313" y="333" width="85" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ShowClientError" bpmnElement="Task_ShowClientError">
+        <dc:Bounds x="1450" y="380" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_SendMultipartRequest" bpmnElement="Task_SendMultipartRequest">
+        <dc:Bounds x="1450" y="188" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ShowSlowUploadNotice" bpmnElement="Task_ShowSlowUploadNotice">
+        <dc:Bounds x="1680" y="100" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_AuthenticateUpload" bpmnElement="Task_AuthenticateUpload">
+        <dc:Bounds x="1700" y="188" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_AuthValid" bpmnElement="Gateway_AuthValid" isMarkerVisible="true">
+        <dc:Bounds x="1930" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1926" y="253" width="59" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ParallelValidationStart" bpmnElement="Gateway_ParallelValidationStart">
+        <dc:Bounds x="2050" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2044" y="253" width="62" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ValidateMetadata" bpmnElement="Task_ValidateMetadata">
+        <dc:Bounds x="2170" y="100" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ValidateFile" bpmnElement="Task_ValidateFile">
+        <dc:Bounds x="2170" y="210" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ScanFile" bpmnElement="Task_ScanFile">
+        <dc:Bounds x="2170" y="320" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ParallelValidationEnd" bpmnElement="Gateway_ParallelValidationEnd">
+        <dc:Bounds x="2420" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2411" y="253" width="68" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Gateway_ServerValid" bpmnElement="Gateway_ServerValid" isMarkerVisible="true">
+        <dc:Bounds x="2540" y="203" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2524" y="253" width="82" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_PrepareBlobName" bpmnElement="Task_PrepareBlobName">
+        <dc:Bounds x="2660" y="188" width="180" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_UploadBlob" bpmnElement="Task_UploadBlob">
+        <dc:Bounds x="2900" y="188" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_SaveImageMetadata" bpmnElement="Task_SaveImageMetadata">
+        <dc:Bounds x="3150" y="188" width="210" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_DeleteBlobCompensation" bpmnElement="Task_DeleteBlobCompensation">
+        <dc:Bounds x="3430" y="360" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ReturnCreatedImage" bpmnElement="Task_ReturnCreatedImage">
+        <dc:Bounds x="3430" y="188" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_ReturnUploadError" bpmnElement="Task_ReturnUploadError">
+        <dc:Bounds x="3690" y="360" width="170" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Task_UpdateUploadList" bpmnElement="Task_UpdateUploadList">
+        <dc:Bounds x="3670" y="188" width="190" height="80" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_UploadSuccess" bpmnElement="End_UploadSuccess">
+        <dc:Bounds x="3920" y="210" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3896" y="246" width="84" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_UploadFailed" bpmnElement="End_UploadFailed">
+        <dc:Bounds x="3930" y="382" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3909" y="418" width="78" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_End_ProgressNotice" bpmnElement="End_ProgressNotice">
+        <dc:Bounds x="1930" y="122" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1910" y="158" width="77" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataObject_ImageFile" bpmnElement="DataObject_ImageFile">
+        <dc:Bounds x="880" y="170" width="120" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="914" y="240" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataObject_MetadataForm" bpmnElement="DataObject_MetadataForm">
+        <dc:Bounds x="1110" y="170" width="120" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1127" y="240" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataObject_BlobUrl" bpmnElement="DataObject_BlobUrl">
+        <dc:Bounds x="3130" y="100" width="120" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3166" y="170" width="48" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataObject_CreatedImageJson" bpmnElement="DataObject_CreatedImageJson">
+        <dc:Bounds x="3440" y="100" width="120" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3463" y="170" width="74" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataStore_BlobStorage" bpmnElement="DataStore_BlobStorage">
+        <dc:Bounds x="2920" y="80" width="140" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2963" y="150" width="54" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_DataStore_ImagesTable" bpmnElement="DataStore_ImagesTable">
+        <dc:Bounds x="3170" y="310" width="140" height="70" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3207" y="380" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Boundary_MetadataSaveError" bpmnElement="Boundary_MetadataSaveError">
+        <dc:Bounds x="3324" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3304" y="286" width="76" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Boundary_BlobUploadError" bpmnElement="Boundary_BlobUploadError">
+        <dc:Bounds x="3054" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3029" y="286" width="86" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Shape_Boundary_SlowUpload" bpmnElement="Boundary_SlowUpload">
+        <dc:Bounds x="1594" y="250" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1568" y="286" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Edge_Flow_Start_ShowUploads" bpmnElement="Flow_Start_ShowUploads">
+        <di:waypoint x="206" y="308" />
+        <di:waypoint x="240" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ShowUploads_ClickUpload" bpmnElement="Flow_ShowUploads_ClickUpload">
+        <di:waypoint x="410" y="308" />
+        <di:waypoint x="460" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ClickUpload_OpenModal" bpmnElement="Flow_ClickUpload_OpenModal">
+        <di:waypoint x="600" y="308" />
+        <di:waypoint x="650" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_OpenModal_FillForm" bpmnElement="Flow_OpenModal_FillForm">
+        <di:waypoint x="800" y="308" />
+        <di:waypoint x="850" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_FillForm_ClientValidation" bpmnElement="Flow_FillForm_ClientValidation">
+        <di:waypoint x="1060" y="308" />
+        <di:waypoint x="1110" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ClientValidation_Gateway" bpmnElement="Flow_ClientValidation_Gateway">
+        <di:waypoint x="1280" y="308" />
+        <di:waypoint x="1330" y="308" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ClientValid_SendRequest" bpmnElement="Flow_ClientValid_SendRequest">
+        <di:waypoint x="1380" y="308" />
+        <di:waypoint x="1415" y="308" />
+        <di:waypoint x="1415" y="228" />
+        <di:waypoint x="1450" y="228" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1419" y="258" width="23" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ClientInvalid_ShowError" bpmnElement="Flow_ClientInvalid_ShowError">
+        <di:waypoint x="1380" y="308" />
+        <di:waypoint x="1415" y="308" />
+        <di:waypoint x="1415" y="420" />
+        <di:waypoint x="1450" y="420" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1414" y="354" width="32" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ClientError_End" bpmnElement="Flow_ClientError_End">
+        <di:waypoint x="1640" y="439" />
+        <di:waypoint x="2840" y="680" />
+        <di:waypoint x="2785" y="400" />
+        <di:waypoint x="3930" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_SlowUpload_Notice" bpmnElement="Flow_SlowUpload_Notice">
+        <di:waypoint x="1612" y="250" />
+        <di:waypoint x="1612" y="150" />
+        <di:waypoint x="1655" y="150" />
+        <di:waypoint x="1655" y="140" />
+        <di:waypoint x="1680" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_SlowNotice_End" bpmnElement="Flow_SlowNotice_End">
+        <di:waypoint x="1870" y="140" />
+        <di:waypoint x="1930" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_SendRequest_Authenticate" bpmnElement="Flow_SendRequest_Authenticate">
+        <di:waypoint x="1630" y="228" />
+        <di:waypoint x="1700" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Authenticate_Gateway" bpmnElement="Flow_Authenticate_Gateway">
+        <di:waypoint x="1880" y="228" />
+        <di:waypoint x="1930" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Authorized_ParallelStart" bpmnElement="Flow_Authorized_ParallelStart">
+        <di:waypoint x="1980" y="228" />
+        <di:waypoint x="2050" y="228" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1989" y="203" width="52" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Unauthorized_Error" bpmnElement="Flow_Unauthorized_Error">
+        <di:waypoint x="1980" y="228" />
+        <di:waypoint x="2835" y="228" />
+        <di:waypoint x="2835" y="400" />
+        <di:waypoint x="3690" y="400" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2817" y="304" width="66" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Parallel_Metadata" bpmnElement="Flow_Parallel_Metadata">
+        <di:waypoint x="2100" y="228" />
+        <di:waypoint x="2135" y="228" />
+        <di:waypoint x="2135" y="140" />
+        <di:waypoint x="2170" y="140" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Parallel_File" bpmnElement="Flow_Parallel_File">
+        <di:waypoint x="2100" y="228" />
+        <di:waypoint x="2135" y="228" />
+        <di:waypoint x="2135" y="250" />
+        <di:waypoint x="2170" y="250" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Parallel_Scan" bpmnElement="Flow_Parallel_Scan">
+        <di:waypoint x="2100" y="228" />
+        <di:waypoint x="2135" y="228" />
+        <di:waypoint x="2135" y="360" />
+        <di:waypoint x="2170" y="360" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Metadata_ParallelEnd" bpmnElement="Flow_Metadata_ParallelEnd">
+        <di:waypoint x="2350" y="140" />
+        <di:waypoint x="2385" y="140" />
+        <di:waypoint x="2385" y="228" />
+        <di:waypoint x="2420" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_File_ParallelEnd" bpmnElement="Flow_File_ParallelEnd">
+        <di:waypoint x="2350" y="250" />
+        <di:waypoint x="2385" y="250" />
+        <di:waypoint x="2385" y="228" />
+        <di:waypoint x="2420" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_Scan_ParallelEnd" bpmnElement="Flow_Scan_ParallelEnd">
+        <di:waypoint x="2350" y="360" />
+        <di:waypoint x="2385" y="360" />
+        <di:waypoint x="2385" y="228" />
+        <di:waypoint x="2420" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ParallelEnd_ServerGateway" bpmnElement="Flow_ParallelEnd_ServerGateway">
+        <di:waypoint x="2470" y="228" />
+        <di:waypoint x="2540" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ServerValid_PrepareBlob" bpmnElement="Flow_ServerValid_PrepareBlob">
+        <di:waypoint x="2590" y="228" />
+        <di:waypoint x="2660" y="228" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="2607" y="203" width="37" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ServerInvalid_Error" bpmnElement="Flow_ServerInvalid_Error">
+        <di:waypoint x="2590" y="228" />
+        <di:waypoint x="3140" y="228" />
+        <di:waypoint x="3140" y="560" />
+        <di:waypoint x="3775" y="560" />
+        <di:waypoint x="3775" y="440" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="3140" y="381" width="30" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_PrepareBlob_Upload" bpmnElement="Flow_PrepareBlob_Upload">
+        <di:waypoint x="2840" y="228" />
+        <di:waypoint x="2900" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_UploadBlob_SaveMetadata" bpmnElement="Flow_UploadBlob_SaveMetadata">
+        <di:waypoint x="3090" y="228" />
+        <di:waypoint x="3150" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_BlobError_ReturnError" bpmnElement="Flow_BlobError_ReturnError">
+        <di:waypoint x="3090" y="268" />
+        <di:waypoint x="3390" y="268" />
+        <di:waypoint x="3390" y="400" />
+        <di:waypoint x="3690" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_SaveMetadata_ReturnCreated" bpmnElement="Flow_SaveMetadata_ReturnCreated">
+        <di:waypoint x="3360" y="228" />
+        <di:waypoint x="3430" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_MetadataError_DeleteBlob" bpmnElement="Flow_MetadataError_DeleteBlob">
+        <di:waypoint x="3360" y="268" />
+        <di:waypoint x="3395" y="268" />
+        <di:waypoint x="3395" y="400" />
+        <di:waypoint x="3430" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_DeleteBlob_ReturnError" bpmnElement="Flow_DeleteBlob_ReturnError">
+        <di:waypoint x="3620" y="400" />
+        <di:waypoint x="3690" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ReturnCreated_UpdateUI" bpmnElement="Flow_ReturnCreated_UpdateUI">
+        <di:waypoint x="3600" y="228" />
+        <di:waypoint x="3670" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_ReturnError_End" bpmnElement="Flow_ReturnError_End">
+        <di:waypoint x="3860" y="400" />
+        <di:waypoint x="3930" y="400" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Flow_UpdateUI_End" bpmnElement="Flow_UpdateUI_End">
+        <di:waypoint x="3860" y="228" />
+        <di:waypoint x="3920" y="228" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_FillUploadForm_DataObject_ImageFile" bpmnElement="Association_Task_FillUploadForm_DataObject_ImageFile">
+        <di:waypoint x="955" y="268" />
+        <di:waypoint x="955" y="254" />
+        <di:waypoint x="940" y="254" />
+        <di:waypoint x="940" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_ClientValidation_DataObject_MetadataForm" bpmnElement="Association_Task_ClientValidation_DataObject_MetadataForm">
+        <di:waypoint x="1195" y="268" />
+        <di:waypoint x="1195" y="254" />
+        <di:waypoint x="1170" y="254" />
+        <di:waypoint x="1170" y="240" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_UploadBlob_DataObject_BlobUrl" bpmnElement="Association_Task_UploadBlob_DataObject_BlobUrl">
+        <di:waypoint x="2995" y="188" />
+        <di:waypoint x="2995" y="179" />
+        <di:waypoint x="3190" y="179" />
+        <di:waypoint x="3190" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_ReturnCreatedImage_DataObject_CreatedImageJson" bpmnElement="Association_Task_ReturnCreatedImage_DataObject_CreatedImageJson">
+        <di:waypoint x="3515" y="188" />
+        <di:waypoint x="3515" y="179" />
+        <di:waypoint x="3500" y="179" />
+        <di:waypoint x="3500" y="170" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_UploadBlob_DataStore_BlobStorage" bpmnElement="Association_Task_UploadBlob_DataStore_BlobStorage">
+        <di:waypoint x="2995" y="188" />
+        <di:waypoint x="2995" y="169" />
+        <di:waypoint x="2990" y="169" />
+        <di:waypoint x="2990" y="150" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Edge_Association_Task_SaveImageMetadata_DataStore_ImagesTable" bpmnElement="Association_Task_SaveImageMetadata_DataStore_ImagesTable">
+        <di:waypoint x="3255" y="268" />
+        <di:waypoint x="3255" y="289" />
+        <di:waypoint x="3240" y="289" />
+        <di:waypoint x="3240" y="310" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

@@ -39,3 +39,7 @@ Desktop.ini
 *.log
 tmp/
 temp/
+
+# Local BPMN modeling tools
+graph/camunda-modeler-*/
+graph/camunda-modeler-*.zip
