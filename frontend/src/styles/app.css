@@ -417,7 +417,12 @@ select {
 }
 
 .sidebar {
+  position: sticky;
+  top: 88px;
+  align-self: start;
   min-height: calc(100vh - 88px);
+  max-height: calc(100vh - 88px);
+  overflow: auto;
   padding: 24px 18px;
   background:
     radial-gradient(circle at top, rgba(207, 215, 205, 0.1), transparent 28%),
@@ -866,6 +871,11 @@ select {
   .detail-grid,
   .workspace-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    max-height: none;
   }
 
   .gallery-grid {

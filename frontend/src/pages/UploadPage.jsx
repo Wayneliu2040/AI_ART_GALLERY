@@ -12,7 +12,7 @@ const initialState = {
   file: null
 };
 
-const PAGE_SIZE = 12;
+const PAGE_SIZE = 8;
 
 const tagOptions = [
   { value: 'landscape', label: 'Landscape' },
