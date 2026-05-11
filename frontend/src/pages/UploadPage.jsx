@@ -139,7 +139,15 @@ export function UploadPage() {
             <section className="upload-preview-grid">
               {images.map((image) => (
                 <article key={image.id} className="upload-preview-card">
-                  <img src={image.imageUrl} alt={image.title} className="upload-preview-card__image" />
+                  <img
+                    src={image.imageUrl}
+                    alt={image.title}
+                    className="upload-preview-card__image"
+                    loading="lazy"
+                    decoding="async"
+                    width="600"
+                    height="300"
+                  />
                   <div className="upload-preview-card__body">
                     <h3>{image.title}</h3>
                     <p>{formatDate(image.createdAt)}</p>

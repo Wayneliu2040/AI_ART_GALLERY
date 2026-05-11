@@ -4,7 +4,15 @@ import { formatDate } from '../utils/format.js';
 export function ImageCard({ image, onLike }) {
   return (
     <article className="image-card">
-      <img className="card-image" src={image.imageUrl} alt={image.title} />
+      <img
+        className="card-image"
+        src={image.imageUrl}
+        alt={image.title}
+        loading="lazy"
+        decoding="async"
+        width="600"
+        height="360"
+      />
 
       <div className="card-body">
         <div className="card-top">
