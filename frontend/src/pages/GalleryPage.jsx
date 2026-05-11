@@ -3,47 +3,85 @@ import { ImageCard } from '../components/ImageCard.jsx';
 import { imageApi } from '../services/api.js';
 import { useAuth } from '../state/AuthContext.jsx';
 
-const filterTags = ['all', 'landscape', 'cyberpunk', 'portrait', 'fantasy'];
+const PAGE_SIZE = 8;
+const filterTags = ['all', 'landscape', 'cyberpunk', 'portrait', 'fantasy', 'abstract', 'anime', 'sci-fi', 'architecture', 'nature', 'surreal'];
 
 export function GalleryPage() {
   const { user } = useAuth();
   const [keyword, setKeyword] = useState('');
   const [activeTag, setActiveTag] = useState('all');
   const [images, setImages] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
 
-  async function loadImages() {
+  async function loadImages(page = 1) {
+    const nextSkip = (page - 1) * PAGE_SIZE;
+
+    setIsPageLoading(true);
     setStatus('loading');
     setError('');
 
     try {
-      const nextImages = await imageApi.list({ keyword, tag: activeTag }, user);
+      const nextImages = await imageApi.list({ keyword, tag: activeTag, skip: nextSkip, take: PAGE_SIZE }, user);
       setImages(nextImages);
+      setCurrentPage(page);
+      setHasNextPage(nextImages.length === PAGE_SIZE);
       setStatus('ready');
     } catch (nextError) {
       setError(nextError.message);
       setStatus('error');
+    } finally {
+      setIsPageLoading(false);
     }
   }
 
   useEffect(() => {
-    loadImages();
+    loadImages(1);
   }, [activeTag]);
 
   async function handleSearch(event) {
     event.preventDefault();
-    await loadImages();
+    await loadImages(1);
+  }
+
+  async function handlePreviousPage() {
+    if (currentPage <= 1 || isPageLoading) {
+      return;
+    }
+
+    await loadImages(currentPage - 1);
+  }
+
+  async function handleNextPage() {
+    if (!hasNextPage || isPageLoading) {
+      return;
+    }
+
+    await loadImages(currentPage + 1);
   }
 
   async function handleLike(imageId) {
-    const updatedImage = await imageApi.addLike(imageId);
+    const result = await imageApi.addLike(imageId);
     setImages((current) =>
-      current.map((image) => (String(image.id) === String(updatedImage.id) ? updatedImage : image))
+      current.map((image) =>
+        String(image.id) === String(result.imageId)
+          ? {
+              ...image,
+              likes: Number.isInteger(result.likes) ? result.likes : image.likes + 1,
+              isLikedByCurrentUser: result.isLikedByCurrentUser ?? true
+            }
+          : image
+      )
     );
   }
 
-  const summary = useMemo(() => `${images.length} artwork${images.length === 1 ? '' : 's'} available`, [images.length]);
+  const summary = useMemo(
+    () => `${images.length} artwork${images.length === 1 ? '' : 's'} on this page`,
+    [images.length]
+  );
 
   return (
     <div className="page-stack">
@@ -100,11 +138,33 @@ export function GalleryPage() {
         ) : null}
 
         {status === 'ready' && images.length > 0 ? (
-          <section className="gallery-grid">
-            {images.map((image) => (
-              <ImageCard key={image.id} image={image} onLike={handleLike} />
-            ))}
-          </section>
+          <>
+            <section className="gallery-grid">
+              {images.map((image) => (
+                <ImageCard key={image.id} image={image} onLike={handleLike} />
+              ))}
+            </section>
+
+            <div className="pagination-row">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handlePreviousPage}
+                disabled={currentPage <= 1 || isPageLoading}
+              >
+                Previous
+              </button>
+              <span className="page-indicator">Page {currentPage}</span>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handleNextPage}
+                disabled={!hasNextPage || isPageLoading}
+              >
+                Next
+              </button>
+            </div>
+          </>
         ) : null}
       </section>
     </div>

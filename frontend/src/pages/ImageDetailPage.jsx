@@ -37,8 +37,12 @@ export function ImageDetailPage() {
   }, [imageId]);
 
   async function handleLike() {
-    const nextImage = await imageApi.addLike(imageId);
-    setImage(nextImage);
+    const result = await imageApi.addLike(imageId);
+    setImage((current) => ({
+      ...current,
+      likes: Number.isInteger(result.likes) ? result.likes : current.likes + 1,
+      isLikedByCurrentUser: result.isLikedByCurrentUser ?? true
+    }));
   }
 
   async function handleCommentSubmit(event) {
@@ -108,8 +112,13 @@ export function ImageDetailPage() {
           </div>
 
           <div className="detail-actions">
-            <button type="button" className="primary-btn" onClick={handleLike}>
-              Like This Image
+            <button
+              type="button"
+              className={`primary-btn like-btn${image.isLikedByCurrentUser ? ' is-liked' : ''}`}
+              onClick={handleLike}
+              disabled={image.isLikedByCurrentUser}
+            >
+              {image.isLikedByCurrentUser ? 'Liked' : 'Like This Image'}
             </button>
           </div>
         </div>

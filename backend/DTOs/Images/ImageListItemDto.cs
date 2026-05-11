@@ -11,6 +11,7 @@ public class ImageListItemDto
   public string ImageUrl { get; set; } = string.Empty;
   public string AuthorName { get; set; } = string.Empty;
   public int Likes { get; set; }
+  public bool IsLikedByCurrentUser { get; set; }
   public int CommentsCount { get; set; }
   public DateTime CreatedAt { get; set; }
 }

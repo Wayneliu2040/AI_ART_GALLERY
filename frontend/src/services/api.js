@@ -129,13 +129,19 @@ export const imageApi = {
       if (filters.tag && filters.tag !== 'all') {
         params.set('tag', filters.tag);
       }
+      if (Number.isInteger(filters.skip) && filters.skip > 0) {
+        params.set('skip', String(filters.skip));
+      }
+      if (Number.isInteger(filters.take) && filters.take > 0) {
+        params.set('take', String(filters.take));
+      }
 
       const query = params.toString();
       return request(`/images${query ? `?${query}` : ''}`);
     }
 
     await wait(350);
-    return sortByNewest(
+    const filteredImages = sortByNewest(
       localImages.filter((image) =>
         matchesFilters(image, {
           ...filters,
@@ -144,6 +150,9 @@ export const imageApi = {
         })
       )
     );
+    const skip = Number.isInteger(filters.skip) ? filters.skip : 0;
+    const take = Number.isInteger(filters.take) ? filters.take : 0;
+    return take > 0 ? filteredImages.slice(skip, skip + take) : filteredImages.slice(skip);
   },
 
   async getById(imageId) {
@@ -209,10 +218,23 @@ export const imageApi = {
     }
 
     await wait(180);
-    localImages = localImages.map((image) =>
-      String(image.id) === String(imageId) ? { ...image, likes: image.likes + 1 } : image
-    );
-    return localImages.find((image) => String(image.id) === String(imageId));
+    let updatedImage = null;
+    localImages = localImages.map((image) => {
+      if (String(image.id) !== String(imageId)) {
+        return image;
+      }
+
+      updatedImage = image.isLikedByCurrentUser
+        ? image
+        : { ...image, likes: image.likes + 1, isLikedByCurrentUser: true };
+      return updatedImage;
+    });
+
+    return {
+      imageId,
+      likes: updatedImage?.likes || 0,
+      isLikedByCurrentUser: true
+    };
   },
 
   async getUserSummary(currentUser) {

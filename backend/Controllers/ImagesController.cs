@@ -18,7 +18,11 @@ public class ImagesController(
   UserContextService userContextService) : ControllerBase
 {
   [HttpGet]
-  public async Task<ActionResult<IEnumerable<ImageListItemDto>>> GetImages([FromQuery] string? q, [FromQuery] string? tag)
+  public async Task<ActionResult<IEnumerable<ImageListItemDto>>> GetImages(
+    [FromQuery] string? q,
+    [FromQuery] string? tag,
+    [FromQuery] int skip = 0,
+    [FromQuery] int take = 0)
   {
     var query = dbContext.Images
       .Include(x => x.User)
@@ -43,11 +47,25 @@ public class ImagesController(
       query = query.Where(x => x.Tag.ToLower() == normalizedTag);
     }
 
-    var images = await query
-      .OrderByDescending(x => x.CreatedAtUtc)
-      .ToListAsync();
+    skip = Math.Max(skip, 0);
+    take = Math.Clamp(take, 0, 50);
 
-    return Ok(images.Select(imageQueryService.MapListItem));
+    query = query.OrderByDescending(x => x.CreatedAtUtc);
+
+    if (skip > 0)
+    {
+      query = query.Skip(skip);
+    }
+
+    if (take > 0)
+    {
+      query = query.Take(take);
+    }
+
+    var images = await query.ToListAsync();
+    var currentUserId = userContextService.GetCurrentUserId();
+
+    return Ok(images.Select(image => imageQueryService.MapListItem(image, currentUserId)));
   }
 
   [Authorize]
@@ -86,7 +104,7 @@ public class ImagesController(
     await dbContext.SaveChangesAsync(cancellationToken);
 
     image.User = user;
-    return Ok(imageQueryService.MapDetail(image));
+    return Ok(imageQueryService.MapDetail(image, userId.Value));
   }
 
   [HttpGet("{id:int}")]
@@ -103,7 +121,8 @@ public class ImagesController(
       return NotFound(new { message = "Image not found." });
     }
 
-    return Ok(imageQueryService.MapDetail(image));
+    var currentUserId = userContextService.GetCurrentUserId();
+    return Ok(imageQueryService.MapDetail(image, currentUserId));
   }
 
   [HttpGet("{id:int}/comments")]
@@ -180,6 +199,6 @@ public class ImagesController(
     }
 
     var likeCount = await dbContext.Likes.CountAsync(x => x.ImageId == id);
-    return Ok(new { imageId = id, likes = likeCount });
+    return Ok(new { imageId = id, likes = likeCount, isLikedByCurrentUser = true });
   }
 }

@@ -6,7 +6,7 @@ namespace AIArtGallery.Api.Services;
 
 public class ImageQueryService
 {
-  public ImageListItemDto MapListItem(ImageEntity image) =>
+  public ImageListItemDto MapListItem(ImageEntity image, int? currentUserId = null) =>
     new()
     {
       Id = image.Id,
@@ -18,11 +18,12 @@ public class ImageQueryService
       ImageUrl = image.BlobUrl,
       AuthorName = image.User?.UserName ?? string.Empty,
       Likes = image.Likes.Count,
+      IsLikedByCurrentUser = currentUserId.HasValue && image.Likes.Any(x => x.UserId == currentUserId.Value),
       CommentsCount = image.Comments.Count,
       CreatedAt = image.CreatedAtUtc
     };
 
-  public ImageDetailDto MapDetail(ImageEntity image) =>
+  public ImageDetailDto MapDetail(ImageEntity image, int? currentUserId = null) =>
     new()
     {
       Id = image.Id,
@@ -34,6 +35,7 @@ public class ImageQueryService
       ImageUrl = image.BlobUrl,
       AuthorName = image.User?.UserName ?? string.Empty,
       Likes = image.Likes.Count,
+      IsLikedByCurrentUser = currentUserId.HasValue && image.Likes.Any(x => x.UserId == currentUserId.Value),
       CommentsCount = image.Comments.Count,
       CreatedAt = image.CreatedAtUtc
     };

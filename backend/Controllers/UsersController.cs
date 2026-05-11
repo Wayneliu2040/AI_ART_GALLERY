@@ -56,6 +56,6 @@ public class UsersController(
       .OrderByDescending(x => x.CreatedAtUtc)
       .ToListAsync();
 
-    return Ok(images.Select(imageQueryService.MapListItem));
+    return Ok(images.Select(image => imageQueryService.MapListItem(image, userId.Value)));
   }
 }

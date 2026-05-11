@@ -42,8 +42,13 @@ export function ImageCard({ image, onLike }) {
         </details>
 
         <div className="card-actions card-actions--spaced">
-          <button type="button" className="secondary-btn" onClick={() => onLike(image.id)}>
-            Like
+          <button
+            type="button"
+            className={`secondary-btn like-btn${image.isLikedByCurrentUser ? ' is-liked' : ''}`}
+            onClick={() => onLike(image.id)}
+            disabled={image.isLikedByCurrentUser}
+          >
+            {image.isLikedByCurrentUser ? 'Liked' : 'Like'}
           </button>
           <Link className="ghost-btn ghost-btn--link" to={`/images/${image.id}`}>
             View Details
