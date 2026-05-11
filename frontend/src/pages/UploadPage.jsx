@@ -12,6 +12,8 @@ const initialState = {
   file: null
 };
 
+const PAGE_SIZE = 12;
+
 const tagOptions = [
   { value: 'landscape', label: 'Landscape' },
   { value: 'cyberpunk', label: 'Cyberpunk' },
@@ -28,29 +30,62 @@ const tagOptions = [
 export function UploadPage() {
   const { user } = useAuth();
   const [images, setImages] = useState([]);
+  const [totalImages, setTotalImages] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(false);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(initialState);
   const [submitState, setSubmitState] = useState('idle');
 
-  useEffect(() => {
-    async function loadImages() {
-      setStatus('loading');
-      setError('');
+  async function loadImagesPage(page, refreshSummary = false) {
+    const nextSkip = (page - 1) * PAGE_SIZE;
 
-      try {
-        const nextImages = await imageApi.list({ onlyMine: true }, user);
-        setImages(nextImages);
-        setStatus('ready');
-      } catch (nextError) {
-        setError(nextError.message);
-        setStatus('error');
+    setIsPageLoading(true);
+    setStatus('loading');
+    setError('');
+
+    try {
+      const [summary, nextImages] = await Promise.all([
+        refreshSummary ? imageApi.getUserSummary(user) : Promise.resolve(null),
+        imageApi.list({ onlyMine: true, skip: nextSkip, take: PAGE_SIZE }, user)
+      ]);
+      setImages(nextImages);
+      if (summary) {
+        setTotalImages(summary.uploadCount || nextImages.length);
       }
+      setCurrentPage(page);
+      setHasNextPage(nextImages.length === PAGE_SIZE);
+      setStatus('ready');
+    } catch (nextError) {
+      setError(nextError.message);
+      setStatus('error');
+    } finally {
+      setIsPageLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    loadImagesPage(1, true);
+  }, [user]);
+
+  async function handlePreviousPage() {
+    if (currentPage <= 1 || isPageLoading) {
+      return;
     }
 
-    loadImages();
-  }, [user]);
+    await loadImagesPage(currentPage - 1);
+  }
+
+  async function handleNextPage() {
+    if (!hasNextPage || isPageLoading) {
+      return;
+    }
+
+    await loadImagesPage(currentPage + 1);
+  }
 
   function openModal() {
     setError('');
@@ -69,9 +104,9 @@ export function UploadPage() {
     setError('');
 
     try {
-      const created = await imageApi.upload(form, user);
-      setImages((current) => [created, ...current]);
+      await imageApi.upload(form, user);
       closeModal();
+      await loadImagesPage(1, true);
     } catch (nextError) {
       setError(nextError.message);
       setSubmitState('error');
@@ -86,7 +121,7 @@ export function UploadPage() {
             <span className="section-tag">Upload Image</span>
             <h2>Your Uploaded Images</h2>
           </div>
-          <span className="upload-summary-count">{images.length} image{images.length === 1 ? '' : 's'}</span>
+          <span className="upload-summary-count">{totalImages} image{totalImages === 1 ? '' : 's'}</span>
         </div>
 
         {status === 'loading' ? <div className="info-card">Loading your uploaded images...</div> : null}
@@ -100,17 +135,39 @@ export function UploadPage() {
         ) : null}
 
         {status === 'ready' && images.length > 0 ? (
-          <section className="upload-preview-grid">
-            {images.map((image) => (
-              <article key={image.id} className="upload-preview-card">
-                <img src={image.imageUrl} alt={image.title} className="upload-preview-card__image" />
-                <div className="upload-preview-card__body">
-                  <h3>{image.title}</h3>
-                  <p>{formatDate(image.createdAt)}</p>
-                </div>
-              </article>
-            ))}
-          </section>
+          <>
+            <section className="upload-preview-grid">
+              {images.map((image) => (
+                <article key={image.id} className="upload-preview-card">
+                  <img src={image.imageUrl} alt={image.title} className="upload-preview-card__image" />
+                  <div className="upload-preview-card__body">
+                    <h3>{image.title}</h3>
+                    <p>{formatDate(image.createdAt)}</p>
+                  </div>
+                </article>
+              ))}
+            </section>
+
+            <div className="pagination-row">
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handlePreviousPage}
+                disabled={currentPage <= 1 || isPageLoading}
+              >
+                Previous
+              </button>
+              <span className="page-indicator">Page {currentPage}</span>
+              <button
+                type="button"
+                className="secondary-btn"
+                onClick={handleNextPage}
+                disabled={!hasNextPage || isPageLoading}
+              >
+                Next
+              </button>
+            </div>
+          </>
         ) : null}
       </section>
 

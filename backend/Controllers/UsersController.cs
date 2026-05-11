@@ -40,7 +40,7 @@ public class UsersController(
   }
 
   [HttpGet("me/images")]
-  public async Task<ActionResult<IEnumerable<ImageListItemDto>>> GetMyImages()
+  public async Task<ActionResult<IEnumerable<ImageListItemDto>>> GetMyImages([FromQuery] int skip = 0, [FromQuery] int take = 0)
   {
     var userId = userContextService.GetCurrentUserId();
     if (userId is null)
@@ -48,13 +48,29 @@ public class UsersController(
       return Unauthorized(new { message = "User not authenticated." });
     }
 
-    var images = await dbContext.Images
+    skip = Math.Max(skip, 0);
+    take = Math.Clamp(take, 0, 50);
+
+    var query = dbContext.Images
       .Include(x => x.User)
       .Include(x => x.Comments)
       .Include(x => x.Likes)
       .Where(x => x.UserId == userId.Value)
-      .OrderByDescending(x => x.CreatedAtUtc)
-      .ToListAsync();
+      .AsQueryable();
+
+    query = query.OrderByDescending(x => x.CreatedAtUtc);
+
+    if (skip > 0)
+    {
+      query = query.Skip(skip);
+    }
+
+    if (take > 0)
+    {
+      query = query.Take(take);
+    }
+
+    var images = await query.ToListAsync();
 
     return Ok(images.Select(image => imageQueryService.MapListItem(image, userId.Value)));
   }

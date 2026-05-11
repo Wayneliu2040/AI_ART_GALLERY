@@ -119,7 +119,16 @@ export const imageApi = {
   async list(filters = {}, currentUser) {
     if (!ENABLE_MOCKS) {
       if (filters.onlyMine) {
-        return request('/users/me/images');
+        const params = new URLSearchParams();
+        if (Number.isInteger(filters.skip) && filters.skip > 0) {
+          params.set('skip', String(filters.skip));
+        }
+        if (Number.isInteger(filters.take) && filters.take > 0) {
+          params.set('take', String(filters.take));
+        }
+
+        const query = params.toString();
+        return request(`/users/me/images${query ? `?${query}` : ''}`);
       }
 
       const params = new URLSearchParams();
