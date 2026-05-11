@@ -35,7 +35,7 @@ jobs:
       - name: Build And Deploy
         id: builddeploy
         env:
-          VITE_API_BASE_URL: http://13.75.222.62:8080/api
+          VITE_API_BASE_URL: https://api.aiartgallery.top/api
           VITE_ENABLE_MOCKS: "false"
         uses: Azure/static-web-apps-deploy@v1
         with:
