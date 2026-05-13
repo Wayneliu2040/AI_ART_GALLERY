@@ -9,6 +9,7 @@ public class ImageListItemDto
   public string Platform { get; set; } = string.Empty;
   public string Prompt { get; set; } = string.Empty;
   public string ImageUrl { get; set; } = string.Empty;
+  public string? ThumbnailUrl { get; set; }
   public string AuthorName { get; set; } = string.Empty;
   public int Likes { get; set; }
   public bool IsLikedByCurrentUser { get; set; }

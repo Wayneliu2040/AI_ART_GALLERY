@@ -53,6 +53,7 @@ public class UsersController(
 
     var query = dbContext.Images
       .Include(x => x.User)
+      .Include(x => x.Thumbnail)
       .Include(x => x.Comments)
       .Include(x => x.Likes)
       .Where(x => x.UserId == userId.Value)

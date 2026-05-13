@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
   public DbSet<UserEntity> Users => Set<UserEntity>();
   public DbSet<ImageEntity> Images => Set<ImageEntity>();
+  public DbSet<ImageThumbnailEntity> ImageThumbnails => Set<ImageThumbnailEntity>();
   public DbSet<CommentEntity> Comments => Set<CommentEntity>();
   public DbSet<LikeEntity> Likes => Set<LikeEntity>();
 
@@ -35,6 +36,19 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
       entity.HasIndex(x => x.CreatedAtUtc);
       entity.HasIndex(x => x.Tag);
       entity.HasOne(x => x.User).WithMany(x => x.Images).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+    });
+
+    modelBuilder.Entity<ImageThumbnailEntity>(entity =>
+    {
+      entity.ToTable("ImageThumbnails");
+      entity.HasKey(x => x.Id);
+      entity.Property(x => x.ThumbnailUrl).HasMaxLength(1000).IsRequired();
+      entity.Property(x => x.ThumbnailBlobName).HasMaxLength(500);
+      entity.Property(x => x.SourceBlobName).HasMaxLength(500);
+      entity.Property(x => x.ContentType).HasMaxLength(100);
+      entity.Property(x => x.CreatedAt).HasDefaultValueSql("SYSUTCDATETIME()");
+      entity.HasIndex(x => x.ImageId).IsUnique();
+      entity.HasOne(x => x.Image).WithOne(x => x.Thumbnail).HasForeignKey<ImageThumbnailEntity>(x => x.ImageId).OnDelete(DeleteBehavior.Cascade);
     });
 
     modelBuilder.Entity<CommentEntity>(entity =>

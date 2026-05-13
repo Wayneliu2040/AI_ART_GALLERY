@@ -26,6 +26,7 @@ public class ImagesController(
   {
     var query = dbContext.Images
       .Include(x => x.User)
+      .Include(x => x.Thumbnail)
       .Include(x => x.Comments)
       .Include(x => x.Likes)
       .AsQueryable();
@@ -112,6 +113,7 @@ public class ImagesController(
   {
     var image = await dbContext.Images
       .Include(x => x.User)
+      .Include(x => x.Thumbnail)
       .Include(x => x.Comments)
       .Include(x => x.Likes)
       .FirstOrDefaultAsync(x => x.Id == id);

@@ -13,6 +13,7 @@ public class ImageEntity
   public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
 
   public UserEntity? User { get; set; }
+  public ImageThumbnailEntity? Thumbnail { get; set; }
   public ICollection<CommentEntity> Comments { get; set; } = new List<CommentEntity>();
   public ICollection<LikeEntity> Likes { get; set; } = new List<LikeEntity>();
 }
