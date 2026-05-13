@@ -2,11 +2,13 @@ import { Link } from 'react-router-dom';
 import { formatDate } from '../utils/format.js';
 
 export function ImageCard({ image, onLike }) {
+  const cardImageSrc = image.thumbnailUrl || image.imageUrl;
+
   return (
     <article className="image-card">
       <img
         className="card-image"
-        src={image.imageUrl}
+        src={cardImageSrc}
         alt={image.title}
         loading="lazy"
         decoding="async"

@@ -137,23 +137,27 @@ export function UploadPage() {
         {status === 'ready' && images.length > 0 ? (
           <>
             <section className="upload-preview-grid">
-              {images.map((image) => (
-                <article key={image.id} className="upload-preview-card">
-                  <img
-                    src={image.imageUrl}
-                    alt={image.title}
-                    className="upload-preview-card__image"
-                    loading="lazy"
-                    decoding="async"
-                    width="600"
-                    height="300"
-                  />
-                  <div className="upload-preview-card__body">
-                    <h3>{image.title}</h3>
-                    <p>{formatDate(image.createdAt)}</p>
-                  </div>
-                </article>
-              ))}
+              {images.map((image) => {
+                const previewImageSrc = image.thumbnailUrl || image.imageUrl;
+
+                return (
+                  <article key={image.id} className="upload-preview-card">
+                    <img
+                      src={previewImageSrc}
+                      alt={image.title}
+                      className="upload-preview-card__image"
+                      loading="lazy"
+                      decoding="async"
+                      width="600"
+                      height="300"
+                    />
+                    <div className="upload-preview-card__body">
+                      <h3>{image.title}</h3>
+                      <p>{formatDate(image.createdAt)}</p>
+                    </div>
+                  </article>
+                );
+              })}
             </section>
 
             <div className="pagination-row">
