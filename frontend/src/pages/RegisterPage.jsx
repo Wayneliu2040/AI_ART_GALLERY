@@ -70,14 +70,15 @@ export function RegisterPage() {
           <p>Create an account to upload artwork, leave comments, and build your Azure demo dataset.</p>
         </div>
 
-        <form className="auth-form" onSubmit={handleSubmit}>
+        <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">
           <label htmlFor="name">Display name</label>
           <input
             id="name"
             type="text"
+            autoComplete="off"
             value={form.name}
             onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-            placeholder="Wayne"
+            placeholder="Enter your display name"
             required
           />
 
@@ -85,9 +86,10 @@ export function RegisterPage() {
           <input
             id="register-email"
             type="email"
+            autoComplete="off"
             value={form.email}
             onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-            placeholder="wayne@example.com"
+            placeholder="name@example.com"
             required
           />
 
@@ -95,6 +97,7 @@ export function RegisterPage() {
           <input
             id="register-password"
             type="password"
+            autoComplete="new-password"
             value={form.password}
             onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
             placeholder="Create password"
@@ -105,6 +108,7 @@ export function RegisterPage() {
           <input
             id="confirm-password"
             type="password"
+            autoComplete="new-password"
             value={form.confirmPassword}
             onChange={(event) => setForm((current) => ({ ...current, confirmPassword: event.target.value }))}
             placeholder="Repeat password"
