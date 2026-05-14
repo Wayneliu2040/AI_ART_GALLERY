@@ -104,7 +104,6 @@ export function GalleryPage() {
 
         <div className="toolbar-meta">
           <span>{summary}</span>
-          <span>Mode: {import.meta.env.VITE_ENABLE_MOCKS !== 'false' ? 'Mock Ready' : 'Live API'}</span>
         </div>
       </section>
 
@@ -133,7 +132,7 @@ export function GalleryPage() {
         {status === 'ready' && images.length === 0 ? (
           <div className="empty-panel">
             <h3>No images found</h3>
-            <p>Try another keyword or tag, or upload the first example image for this category.</p>
+            <p>Try another keyword or tag, or share a new image for this category.</p>
           </div>
         ) : null}
 

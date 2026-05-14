@@ -5,16 +5,16 @@ import { useAuth } from '../state/AuthContext.jsx';
 
 const highlights = [
   {
-    title: 'Ready for real APIs',
-    description: 'The form structure matches the future .NET authentication endpoints.'
+    title: 'Create your profile',
+    description: 'Set up an account so your shared artwork appears under your name.'
   },
   {
-    title: 'Student-project friendly',
-    description: 'Simple enough to ship quickly while still feeling like a full product workflow.'
+    title: 'Share new artwork',
+    description: 'Upload images, prompts, and descriptions for others to discover.'
   },
   {
-    title: 'Azure-focused delivery',
-    description: 'Designed to connect cleanly with Azure SQL and Azure VM-hosted APIs.'
+    title: 'Interact with artists',
+    description: 'Like images and leave comments as you explore the gallery.'
   }
 ];
 
@@ -58,16 +58,16 @@ export function RegisterPage() {
   return (
     <div className="auth-shell">
       <AuthHero
-        badge="Azure Project Onboarding"
+        badge="Join the Gallery"
         title="Create your gallery account"
-        subtitle="Register a user profile that will later be stored in Azure SQL Database and authenticated through the .NET backend."
+        subtitle="Create an account to share your AI artwork and connect with other creators."
         highlights={highlights}
       />
 
       <section className="auth-card">
         <div className="auth-header">
           <h2>Register</h2>
-          <p>Create an account to upload artwork, leave comments, and build your Azure demo dataset.</p>
+          <p>Create an account to upload artwork, leave comments, and build your public profile.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit} autoComplete="off">

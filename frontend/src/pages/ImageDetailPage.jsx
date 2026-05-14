@@ -71,7 +71,7 @@ export function ImageDetailPage() {
       <PageHeader
         eyebrow="Image Detail"
         title={image.title}
-        description="Review metadata, test interaction features, and verify the detail-page workflow that will be backed by Azure SQL and Blob data."
+        description="View the artwork, read its prompt, and join the discussion."
       />
 
       <section className="detail-grid">
@@ -93,7 +93,7 @@ export function ImageDetailPage() {
               <span className="meta-value">{image.authorName}</span>
             </div>
             <div>
-              <span className="meta-label">Platform</span>
+              <span className="meta-label">Generation tool</span>
               <span className="meta-value">{image.platform}</span>
             </div>
             <div>
@@ -127,7 +127,7 @@ export function ImageDetailPage() {
       <section className="comments-panel">
         <div className="comments-header">
           <h3>Comments</h3>
-          <p>Use this area to validate your `POST /api/images/:id/comments` integration.</p>
+          <p>Share your thoughts about this artwork.</p>
         </div>
 
         <form className="comment-form" onSubmit={handleCommentSubmit}>
@@ -146,7 +146,7 @@ export function ImageDetailPage() {
           {comments.length === 0 ? (
             <div className="empty-panel">
               <h3>No comments yet</h3>
-              <p>Be the first person to test the comment flow for this artwork.</p>
+              <p>Be the first person to comment on this artwork.</p>
             </div>
           ) : (
             comments.map((comment) => (

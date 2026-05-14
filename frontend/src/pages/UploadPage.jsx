@@ -6,7 +6,7 @@ import { formatDate } from '../utils/format.js';
 const initialState = {
   title: '',
   tag: 'landscape',
-  platform: 'Azure OpenAI + Prompt Workflow',
+  platform: '',
   description: '',
   prompt: '',
   file: null
@@ -187,7 +187,7 @@ export function UploadPage() {
         <div>
           <span className="section-tag">Share</span>
           <h2>Share your AI artwork</h2>
-          <p>Upload a new image and add the metadata that will later be stored in Azure SQL Database and Azure Blob Storage.</p>
+          <p>Upload a new image, add its story and prompt, then share it with the gallery.</p>
         </div>
         <button type="button" className="primary-btn" onClick={openModal}>
           Upload
@@ -237,13 +237,13 @@ export function UploadPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="upload-platform">Platform</label>
+                  <label htmlFor="upload-platform">Generation tool</label>
                   <input
                     id="upload-platform"
                     type="text"
                     value={form.platform}
                     onChange={(event) => setForm((current) => ({ ...current, platform: event.target.value }))}
-                    placeholder="DALL·E"
+                    placeholder="DALL·E, Midjourney, Stable Diffusion..."
                     required
                   />
                 </div>

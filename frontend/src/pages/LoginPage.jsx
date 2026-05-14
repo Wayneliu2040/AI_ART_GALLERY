@@ -5,16 +5,16 @@ import { useAuth } from '../state/AuthContext.jsx';
 
 const highlights = [
   {
-    title: 'Proposal-aligned scope',
-    description: 'Authentication, upload, browse, search, comments, and likes in one Azure-ready frontend.'
+    title: 'Art frontier in the AI era',
+    description: 'Discover imaginative visual worlds shaped by prompts, models, and human taste.'
   },
   {
-    title: 'React-first structure',
-    description: 'Built for component reuse, client-side routing, and clean API integration.'
+    title: 'Inspiration from every creator',
+    description: 'Browse fresh ideas, styles, and prompts from people exploring generative art.'
   },
   {
-    title: 'Azure deployment path',
-    description: 'Prepared for Azure Static Web Apps with a dedicated SPA routing config.'
+    title: 'A gallery built for exchange',
+    description: 'Share your own work, appreciate others, and turn AI images into conversation.'
   }
 ];
 
@@ -49,16 +49,16 @@ export function LoginPage() {
   return (
     <div className="auth-shell">
       <AuthHero
-        badge="Azure Static Web Apps Frontend"
+        badge="AI Art Community"
         title="AI Art Gallery"
-        subtitle="A cloud-based AI image sharing experience for browsing artwork, storing metadata, and preparing Azure-backed course demos."
+        subtitle="A space for browsing, sharing, and discussing AI-generated artwork."
         highlights={highlights}
       />
 
       <section className="auth-card">
         <div className="auth-header">
           <h2>Sign in</h2>
-          <p>Use your account to access the gallery, upload new work, and test the Azure-backed flow.</p>
+          <p>Use your account to access the gallery, upload new work, and join the conversation.</p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
