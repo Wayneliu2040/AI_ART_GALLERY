@@ -20,6 +20,7 @@ builder.Services.AddScoped<JwtTokenService>();
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<UserContextService>();
 builder.Services.AddScoped<AzureBlobStorageService>();
+builder.Services.AddScoped<ImageThumbnailService>();
 builder.Services.AddScoped<ImageQueryService>();
 
 builder.Services.AddCors(options =>

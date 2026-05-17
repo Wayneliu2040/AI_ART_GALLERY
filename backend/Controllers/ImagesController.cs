@@ -14,8 +14,10 @@ namespace AIArtGallery.Api.Controllers;
 public class ImagesController(
   AppDbContext dbContext,
   AzureBlobStorageService blobStorageService,
+  ImageThumbnailService imageThumbnailService,
   ImageQueryService imageQueryService,
-  UserContextService userContextService) : ControllerBase
+  UserContextService userContextService,
+  ILogger<ImagesController> logger) : ControllerBase
 {
   [HttpGet]
   public async Task<ActionResult<IEnumerable<ImageListItemDto>>> GetImages(
@@ -88,7 +90,7 @@ public class ImagesController(
     var user = await dbContext.Users.FirstAsync(x => x.Id == userId.Value, cancellationToken);
 
     await using var stream = request.File.OpenReadStream();
-    var blobUrl = await blobStorageService.UploadAsync(stream, request.File.FileName, request.File.ContentType, cancellationToken);
+    var originalUpload = await blobStorageService.UploadAsync(stream, request.File.FileName, request.File.ContentType, cancellationToken);
 
     var image = new ImageEntity
     {
@@ -98,11 +100,32 @@ public class ImagesController(
       Platform = request.Platform.Trim(),
       Description = request.Description.Trim(),
       Prompt = request.Prompt.Trim(),
-      BlobUrl = blobUrl
+      BlobUrl = originalUpload.Url
     };
 
     dbContext.Images.Add(image);
     await dbContext.SaveChangesAsync(cancellationToken);
+
+    try
+    {
+      await using var thumbnailSourceStream = request.File.OpenReadStream();
+      var thumbnail = await imageThumbnailService.CreateThumbnailAsync(
+        thumbnailSourceStream,
+        image.Id,
+        originalUpload.BlobName,
+        cancellationToken);
+
+      dbContext.ImageThumbnails.Add(thumbnail);
+      await dbContext.SaveChangesAsync(cancellationToken);
+      image.Thumbnail = thumbnail;
+    }
+    catch (Exception error)
+    {
+      logger.LogWarning(
+        error,
+        "Thumbnail generation failed for image {ImageId}. The original upload was saved and the API will return thumbnailUrl as null.",
+        image.Id);
+    }
 
     image.User = user;
     return Ok(imageQueryService.MapDetail(image, userId.Value));
